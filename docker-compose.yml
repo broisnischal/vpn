@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  vpn-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.server
+    container_name: omail-server
+    image: omail-server:latest
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "51820:51820/udp"
+    environment:
+      - VPN_PASSWORD=${VPN_PASSWORD:-changeme123}
+      - VPN_ADDRESS=:51820
+      - VPN_TUN_NAME=omail0
+      - VPN_TUN_IP=10.0.0.1
+      - VPN_TUN_NETMASK=255.255.255.0
+      - VPN_MTU=1500
+    command:
+      - "-address"
+      - "${VPN_ADDRESS:-:51820}"
+      - "-password"
+      - "${VPN_PASSWORD:-changeme123}"
+      - "-tun"
+      - "${VPN_TUN_NAME:-omail0}"
+      - "-tun-ip"
+      - "${VPN_TUN_IP:-10.0.0.1}"
+      - "-tun-netmask"
+      - "${VPN_TUN_NETMASK:-255.255.255.0}"
+      - "-mtu"
+      - "${VPN_MTU:-1500}"
+    networks:
+      - vpn-network
+    sysctls:
+      - net.ipv4.ip_forward=1
+    volumes:
+      - /lib/modules:/lib/modules:ro
+
+  # Example client (optional - usually run on different machine)
+  # vpn-client:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile.client
+  #   container_name: omail-client
+  #   image: omail-client:latest
+  #   restart: unless-stopped
+  #   cap_add:
+  #     - NET_ADMIN
+  #   devices:
+  #     - /dev/net/tun:/dev/net/tun
+  #   environment:
+  #     - VPN_SERVER=${VPN_SERVER:-vpn-server:51820}
+  #     - VPN_PASSWORD=${VPN_PASSWORD:-changeme123}
+  #     - VPN_TUN_NAME=omail0
+  #     - VPN_TUN_IP=10.0.0.2
+  #   command:
+  #     - "-server"
+  #     - "${VPN_SERVER:-vpn-server:51820}"
+  #     - "-password"
+  #     - "${VPN_PASSWORD:-changeme123}"
+  #     - "-tun"
+  #     - "${VPN_TUN_NAME:-omail0}"
+  #     - "-tun-ip"
+  #     - "${VPN_TUN_IP:-10.0.0.2}"
+  #   networks:
+  #     - vpn-network
+  #   depends_on:
+  #     - vpn-server
+
+networks:
+  vpn-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

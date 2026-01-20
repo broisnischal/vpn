@@ -1,0 +1,39 @@
+# Build stage
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /build
+
+# Install dependencies for TUN/TAP
+RUN apk add --no-cache gcc musl-dev linux-headers
+
+# Copy go mod files
+COPY go.mod go.sum* ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build server
+RUN CGO_ENABLED=1 GOOS=linux go build -o /bin/omail-server ./cmd/server
+
+# Runtime stage
+FROM alpine:latest
+
+# Install required packages for TUN and networking
+RUN apk add --no-cache \
+    iproute2 \
+    iptables \
+    ca-certificates \
+    tzdata
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /bin/omail-server /app/omail-server
+
+# Create TUN device (requires privileged mode)
+# Note: TUN device creation requires --cap-add=NET_ADMIN --device=/dev/net/tun
+
+EXPOSE 51820/udp
+
+ENTRYPOINT ["/app/omail-server"]
