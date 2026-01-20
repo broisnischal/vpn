@@ -8,6 +8,7 @@ A self-hosted VPN server implementation with TUN interface support, built in Go.
 - **Encryption**: AES-256-GCM encryption for all VPN traffic
 - **Routing Management**: Automatic routing table configuration (full tunnel or split tunnel)
 - **Docker Support**: Ready-to-use Docker containers for easy deployment
+- **Cloud Ready**: Automated deployment scripts for AWS and Azure
 - **Cross-Platform**: Works on Linux and macOS
 - **Educational**: Learn about VPN protocols, routing, and network programming
 
@@ -45,6 +46,32 @@ A self-hosted VPN server implementation with TUN interface support, built in Go.
 - Docker and Docker Compose (for containerized deployment)
 
 ## Quick Start
+
+### Cloud Deployment (AWS/Azure)
+
+Deploy your VPN server in the cloud in minutes:
+
+**AWS:**
+```bash
+# Upload project to EC2
+scp -r omail/ ubuntu@YOUR_EC2_IP:~/
+
+# SSH and deploy
+ssh ubuntu@YOUR_EC2_IP
+cd omail && sudo bash deploy/aws-deploy.sh
+```
+
+**Azure:**
+```bash
+# Upload project to VM
+scp -r omail/ azureuser@YOUR_AZURE_IP:~/
+
+# SSH and deploy
+ssh azureuser@YOUR_AZURE_IP
+cd omail && sudo bash deploy/azure-deploy.sh
+```
+
+See [CLOUD-SETUP.md](./CLOUD-SETUP.md) for detailed instructions.
 
 ### Local Development
 
