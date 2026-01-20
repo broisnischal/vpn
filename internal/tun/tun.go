@@ -6,8 +6,6 @@ import (
 	"net"
 	"os/exec"
 	"runtime"
-	"syscall"
-	"unsafe"
 
 	"github.com/songgao/water"
 	"golang.org/x/sys/unix"
@@ -124,9 +122,13 @@ func setIPLinux(name string, ip net.IP, mask net.IPMask) error {
 	}
 
 	// Set IP address
-	addr := unix.SockaddrInet4{}
-	copy(addr.Addr[:], ip.To4())
-	ifreq.SetInet4Addr(addr.Addr)
+	ip4 := ip.To4()
+	if ip4 == nil {
+		return fmt.Errorf("invalid IPv4 address")
+	}
+	var addr [4]byte
+	copy(addr[:], ip4)
+	ifreq.SetInet4Addr(addr[:])
 
 	if err := unix.IoctlIfreq(fd, unix.SIOCSIFADDR, ifreq); err != nil {
 		return err
@@ -137,8 +139,11 @@ func setIPLinux(name string, ip net.IP, mask net.IPMask) error {
 	if len(maskBytes) == 16 {
 		maskBytes = maskBytes[12:]
 	}
-	copy(addr.Addr[:], maskBytes)
-	ifreq.SetInet4Addr(addr.Addr)
+	if len(maskBytes) != 4 {
+		return fmt.Errorf("invalid netmask length")
+	}
+	copy(addr[:], maskBytes)
+	ifreq.SetInet4Addr(addr[:])
 
 	if err := unix.IoctlIfreq(fd, unix.SIOCSIFNETMASK, ifreq); err != nil {
 		return err
